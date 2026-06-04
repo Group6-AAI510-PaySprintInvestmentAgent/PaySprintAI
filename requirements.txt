@@ -1,0 +1,10 @@
+openai>=1.30.0
+yfinance>=0.2.40
+gnews>=0.3.7
+nltk>=3.8.1
+pandas>=2.0.0
+numpy>=1.26.0
+scikit-learn>=1.4.0
+python-dotenv>=1.0.0
+pandas-ta>=0.3.14b
+yahooquery>=2.3.7
