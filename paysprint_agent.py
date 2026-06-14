@@ -82,8 +82,17 @@ except ImportError:
 
 DB_PATH        = "paysprint.db"
 TRACES_DIR     = "data/traces"
-MODEL_REASONING = os.getenv("MODEL_REASONING", "gpt-4o")
-MODEL_SUMMARY   = os.getenv("MODEL_SUMMARY",   "gpt-4o-mini")
+
+# Gemini OpenAI-compatible endpoint
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+
+# Default models: prefer Gemini (free tier) if key is present, otherwise OpenAI
+if os.getenv("GEMINI_API_KEY"):
+    MODEL_REASONING = os.getenv("MODEL_REASONING", "gemini-2.5-flash")
+    MODEL_SUMMARY   = os.getenv("MODEL_SUMMARY",   "gemini-2.5-flash-lite")
+else:
+    MODEL_REASONING = os.getenv("MODEL_REASONING", "gpt-4o")
+    MODEL_SUMMARY   = os.getenv("MODEL_SUMMARY",   "gpt-4o-mini")
 
 # Scoring weights for stock ranking (sum must equal 1.0)
 #  Hyunju can adjust these in agent_definition.ipynb 
@@ -116,15 +125,18 @@ TRUSTED_SOURCES = {
 H_3M  = 63   # ? 3 months
 H_12M = 252  # ? 12 months
 
-#  OpenAI client 
+#  LLM client - supports Gemini (preferred) or OpenAI
 def _get_client() -> OpenAI:
-    key = os.getenv("OPENAI_API_KEY", "")
-    if not key:
-        raise EnvironmentError(
-            "OPENAI_API_KEY not set. Add it to your .env file or run:\n"
-            "  import os; os.environ['OPENAI_API_KEY'] = 'sk-...'"
-        )
-    return OpenAI(api_key=key)
+    gemini_key = os.getenv("GEMINI_API_KEY", "")
+    openai_key = os.getenv("OPENAI_API_KEY", "")
+    if gemini_key:
+        return OpenAI(api_key=gemini_key, base_url=GEMINI_BASE_URL)
+    if openai_key:
+        return OpenAI(api_key=openai_key)
+    raise EnvironmentError(
+        "No API key found. Set GEMINI_API_KEY or OPENAI_API_KEY in your .env file.\n"
+        "Copy .env.example to .env and add your key."
+    )
 
 
 # =============================================================================
@@ -852,8 +864,10 @@ def print_trace_summary(result: dict):
 
 #  Cost calculator 
 MODEL_PRICES = {
-    "gpt-4o":      {"input": 2.50,  "output": 10.00},  # per 1M tokens
-    "gpt-4o-mini": {"input": 0.15,  "output":  0.60},
+    "gpt-4o":                {"input": 2.50, "output": 10.00},  # per 1M tokens
+    "gpt-4o-mini":           {"input": 0.15, "output":  0.60},
+    "gemini-2.5-flash":      {"input": 0.30, "output":  2.50},
+    "gemini-2.5-flash-lite": {"input": 0.10, "output":  0.40},
 }
 
 def estimate_cost(result: dict) -> dict:
