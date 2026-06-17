@@ -1,0 +1,13 @@
+ticker,company,sector,news_mentions,trusted_mentions,ticker_news_articles,trusted_article_share,avg_sentiment,last_price,slope_per_day,volatility_30d,revenue_growth,pe_ratio,market_cap,trend_score,risk_label,suggested_investment_amount,data_quality_flags,fundamental_data_source,price_data_source,used_example_data
+NVDA,,Technology,8,4,20,0.8,-0.013,204.65,0.3002,0.0287,0.852,31.34,4956827418624.0,0.822,Lower,1020.0,no major issues,unavailable,course_function_or_yfinance,False
+AVGO,,Technology,10,2,20,0.85,0.031,392.9,0.9241,0.0397,0.479,65.16,1869253312512.0,0.773,Medium,700.0,no major issues,unavailable,course_function_or_yfinance,False
+MRVL,,Technology,10,0,20,0.75,0.214,289.54,1.6186,0.0862,0.276,99.84,253507665920.0,0.754,High,370.0,no major issues,unavailable,course_function_or_yfinance,False
+INTC,,Technology,8,1,20,0.7,0.169,121.1,0.7666,0.0571,0.072,,608648560640.0,0.741,High,370.0,missing P/E,unavailable,course_function_or_yfinance,False
+ORCL,,Technology,6,2,20,0.55,0.105,183.53,0.2126,0.0455,0.206,31.43,527840739328.0,0.741,High,370.0,no major issues,unavailable,course_function_or_yfinance,False
+MU,,Technology,14,1,20,0.55,0.027,1043.19,5.3422,0.0719,1.963,49.14,1176440799232.0,0.728,High,370.0,no major issues,unavailable,course_function_or_yfinance,False
+SNDK,,Technology,6,0,20,0.9,0.101,1958.8,12.9318,0.0621,2.51,66.9,290078228480.0,0.727,High,370.0,no major issues,unavailable,course_function_or_yfinance,False
+AMD,,Technology,10,2,20,0.65,0.043,512.48,2.7022,0.0598,0.378,171.4,835650125824.0,0.716,High,350.0,no major issues,unavailable,course_function_or_yfinance,False
+HD,,Consumer Cyclical,4,1,20,0.5,0.032,327.48,-0.5689,0.0166,0.048,23.24,326535774208.0,0.461,Lower,570.0,no major issues,unavailable,course_function_or_yfinance,False
+SDOT,,Consumer Defensive,6,0,20,0.05,0.031,17.18,-0.4592,0.4169,,,17382776.0,0.371,High,170.0,missing P/E; missing revenue growth,unavailable,course_function_or_yfinance,False
+CAST,,Communication Services,6,0,20,0.35,0.047,5.15,-0.0607,0.3866,-0.354,,212910352.0,0.347,High,170.0,missing P/E,unavailable,course_function_or_yfinance,False
+SLBT,,Healthcare,4,0,20,0.0,-0.011,6.38,-0.0262,0.3457,,,3572525312.0,0.306,High,150.0,missing P/E; missing revenue growth,unavailable,course_function_or_yfinance,False
