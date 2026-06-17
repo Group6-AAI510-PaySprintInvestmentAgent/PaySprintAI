@@ -1,0 +1,32 @@
+{
+  "conservative": [
+    "JNJ",
+    "PG",
+    "KO",
+    "VZ",
+    "WMT",
+    "MCD",
+    "MMM",
+    "ABT"
+  ],
+  "moderate": [
+    "HD",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "V",
+    "MA",
+    "AMZN",
+    "JPM"
+  ],
+  "aggressive": [
+    "NVDA",
+    "AMD",
+    "META",
+    "TSLA",
+    "PLTR",
+    "CRWD",
+    "SNOW",
+    "SMCI"
+  ]
+}
