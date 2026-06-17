@@ -679,8 +679,19 @@ def run_agent(
 
         # No more tool calls -> LLM is done, return the final report
         if not msg.tool_calls:
+            report = (msg.content or "").strip()
+            if not report:
+                # Model stopped with no text (common Gemini behaviour after the last
+                # tool result). Nudge it to write the report — same recovery as max_turns.
+                messages.append({"role": "user",
+                                 "content": "Please write the final investment report now based on everything you have gathered."})
+                recovery = client.chat.completions.create(
+                    model=model, messages=messages, temperature=0.3)
+                total_in  += recovery.usage.prompt_tokens
+                total_out += recovery.usage.completion_tokens
+                report = (recovery.choices[0].message.content or "").strip()
             return {
-                "report":     msg.content or "",
+                "report":     report,
                 "model":      model,
                 "turns":      turn + 1,
                 "messages":   messages,
