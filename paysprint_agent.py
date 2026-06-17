@@ -231,7 +231,16 @@ def fetch_news(query: str = "stock market", days: int = 30, max_results: int = 4
         return empty
     try:
         g    = GNews(language="en", country="US", period=f"{days}d", max_results=max_results)
-        rows = g.get_news(query) or []
+        # Suppress asyncio "Future exception was never retrieved" noise that gnews emits
+        # when its Playwright URL-resolver fails inside a ThreadPoolExecutor worker thread.
+        import logging as _logging
+        _asyncio_log = _logging.getLogger('asyncio')
+        _prev_level  = _asyncio_log.level
+        _asyncio_log.setLevel(_logging.CRITICAL)
+        try:
+            rows = g.get_news(query) or []
+        finally:
+            _asyncio_log.setLevel(_prev_level)
         records = []
         for r in rows:
             title = r.get("title", "")
