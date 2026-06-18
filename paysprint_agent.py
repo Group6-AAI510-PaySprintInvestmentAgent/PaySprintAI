@@ -4,9 +4,7 @@ PaySprint AI Investment Agent - Complete Working Core Module
 AAI-510 | Group 6 | University of San Diego
 
 This file is the finished, working backbone of the project.
-The three notebooks import from here - teammates do NOT need to edit this file
-unless they want to improve something specific.
-
+The three notebooks import from here
 Notebook mapping:
   data_pipeline.ipynb   -> Reema Eid    (Data Engineer)   -> DATA LAYER section
   agent_definition.ipynb -> Hyunju Yu   (AI Engineer)      -> AGENT LAYER section
@@ -41,6 +39,18 @@ except ImportError:
 try:
     from gnews import GNews
     GNEWS_OK = True
+    import threading as _threading
+    try:
+        import gnews.utils.utils as _gnews_utils
+        _orig_playwright = getattr(_gnews_utils, '_resolve_with_playwright', None)
+        if _orig_playwright:
+            def _safe_playwright(url, *args, **kwargs):
+                if _threading.current_thread() is not _threading.main_thread():
+                    return None
+                return _orig_playwright(url, *args, **kwargs)
+            _gnews_utils._resolve_with_playwright = _safe_playwright
+    except Exception:
+        pass
 except ImportError:
     GNEWS_OK = False
     print("[WARN] gnews missing - run: pip install gnews")
@@ -95,7 +105,6 @@ else:
     MODEL_SUMMARY   = os.getenv("MODEL_SUMMARY",   "gpt-4o-mini")
 
 # Scoring weights for stock ranking (sum must equal 1.0)
-#  Hyunju can adjust these in agent_definition.ipynb 
 SCORING_WEIGHTS = {
     "sentiment": 0.40,
     "momentum":  0.35,
@@ -103,7 +112,6 @@ SCORING_WEIGHTS = {
 }
 
 # Stocks offered per strategy tier
-#  Hyunju can add/remove tickers in agent_definition.ipynb 
 SCREENER_STOCKS = {
     "conservative": ["JNJ", "PG", "KO", "VZ", "WMT", "MCD", "MMM", "ABT"],
     "moderate":     ["AAPL", "MSFT", "GOOGL", "V", "MA", "AMZN", "JPM", "HD"],
@@ -111,7 +119,6 @@ SCREENER_STOCKS = {
 }
 
 # Trusted financial news publishers
-#  Reema can add more sources in data_pipeline.ipynb 
 TRUSTED_SOURCES = {
     "reuters", "bloomberg", "wsj", "cnbc", "financial times",
     "yahoo finance", "marketwatch", "barrons", "seeking alpha",
@@ -231,15 +238,7 @@ def fetch_news(query: str = "stock market", days: int = 30, max_results: int = 4
         return empty
     try:
         g    = GNews(language="en", country="US", period=f"{days}d", max_results=max_results)
-        # gnews internally tries Playwright for URL resolution, which raises
-        # NotImplementedError on Windows in worker threads. The asyncio Future holding
-        # that exception logs "Future exception was never retrieved" via the asyncio
-        # logger when GC'd — which happens after g.get_news() returns, so a context
-        # manager can't catch it. Suppress permanently; gnews news fetch still works.
-        import logging as _logging, gc as _gc
-        _logging.getLogger('asyncio').setLevel(_logging.CRITICAL)
         rows = g.get_news(query) or []
-        _gc.collect()  # flush Playwright Futures while level is still CRITICAL
         records = []
         for r in rows:
             title = r.get("title", "")
@@ -404,7 +403,7 @@ def load_recommendations(user_id: int = None, db_path: str = DB_PATH) -> pd.Data
 def tool_screen_stocks(aggressiveness: str, sectors: list = None) -> dict:
     """
     Return candidate tickers for the given strategy.
-    Source: SCREENER_STOCKS dict (editable by Hyunju in Notebook 2).
+    Source: SCREENER_STOCKS dict.
     Sector filter is informational only in this version.
     """
     candidates = SCREENER_STOCKS.get(aggressiveness.lower(), SCREENER_STOCKS["moderate"])
@@ -599,38 +598,46 @@ def build_system_prompt(profile: dict) -> str:
     Build the agent system prompt from the user profile.
     Hyunju can customize the wording and instructions in Notebook 2.
     """
-    return f"""You are PaySprint, a professional AI investment research assistant for retail investors.
-Your job is to research stocks and produce a clear, personalized investment plan.
+    return f"""You are PaySprint, an AI-powered investment research tool built for educational and informational purposes.
 
-User Profile:
-  - Name:           {profile.get('name', 'Investor')}
-  - Budget:         ${profile.get('budget', 0):,.2f}
-  - Strategy:       {profile.get('aggressiveness', 'moderate')}
-  - Horizon:        {profile.get('horizon_months', 12)} months
-  - Current stocks: {json.dumps(profile.get('current_holdings', {}))}
-  - Preferred sectors: {json.dumps(profile.get('preferred_sectors', []))}
+    COMPLIANCE NOTICE — READ FIRST:
+    PaySprint is NOT a registered investment advisor, broker-dealer, or licensed financial professional.
+    All research, analysis, and recommendations produced by this tool are for INFORMATIONAL PURPOSES ONLY
+    and do NOT constitute financial advice, a solicitation, or an offer to buy or sell any security.
+    Past performance does not guarantee future results. Investing involves risk, including possible loss
+    of principal. Users MUST consult a licensed financial advisor before making any investment decisions.
 
-You MUST follow this workflow exactly:
-1. Call screen_stocks to get candidate tickers for the user's strategy.
-2. For each candidate ticker, call get_technical_indicators, get_news_sentiment, and get_fundamentals.
-3. Select the top 3-5 stocks based on momentum, sentiment, and fundamentals.
-4. Call create_purchase_plan with budget=${profile.get('budget', 0):,.2f}, the selected tickers, and weights that match the strategy.
-5. Write the final investment report with:
-   - A 2-3 sentence summary for each selected stock
-   - Why you selected it (data-driven reasoning)
-   - A formatted purchase plan table
-   - MANDATORY RISK DISCLOSURE at the end
+    User Profile:
+    - Name:           {profile.get('name', 'Investor')}
+    - Budget:         ${profile.get('budget', 0):,.2f}
+    - Strategy:       {profile.get('aggressiveness', 'moderate')}
+    - Horizon:        {profile.get('horizon_months', 12)} months
+    - Current stocks: {json.dumps(profile.get('current_holdings', {}))}
+    - Preferred sectors: {json.dumps(profile.get('preferred_sectors', []))}
 
-Strategy-weight guidelines:
-  - conservative: spread equally or weight toward lower-volatility picks
-  - moderate: weight slightly toward highest momentum
-  - aggressive: weight heavily toward top momentum picks
+    You MUST follow this workflow exactly:
+    1. Call screen_stocks to get candidate tickers for the user's strategy.
+    2. For each candidate ticker, call get_technical_indicators, get_news_sentiment, and get_fundamentals.
+    3. Select the top 3-5 stocks based on momentum, sentiment, and fundamentals.
+    4. Call create_purchase_plan with budget=${profile.get('budget', 0):,.2f}, the selected tickers, and weights that match the strategy.
+    5. Write the final investment report with:
+    - A compliance disclaimer at the TOP stating this is not financial advice
+    - A 2-3 sentence summary for each selected stock
+    - Why you selected it (data-driven reasoning)
+    - A formatted purchase plan table
+    - A full risk disclosure at the END covering: market risk, data limitations, no guarantee of returns,
+        and a reminder to consult a licensed financial advisor before acting on any recommendation
 
-IMPORTANT: If the user asks anything NOT related to stock research or investment planning
-(e.g. cooking, geography, coding), politely decline and say:
-"I'm specialized in investment research. I can't help with that, but I'm happy to research
-stocks or build an investment plan for you."
-"""
+    Strategy-weight guidelines:
+    - conservative: spread equally or weight toward lower-volatility picks
+    - moderate: weight slightly toward highest momentum
+    - aggressive: weight heavily toward top momentum picks
+
+    SCOPE BOUNDARY: If the user asks anything NOT related to stock research or investment planning
+    (e.g. cooking, geography, coding), politely decline and say:
+    "I'm specialized in investment research. I can't help with that, but I'm happy to research
+    stocks or build an investment plan for you."
+    """
 
 
 #  ReAct orchestrator 
